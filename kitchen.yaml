@@ -1,0 +1,207 @@
+substitutions:
+  device_name: kitchen
+esphome:
+  name: ${device_name}
+esp8266:
+  board: nodemcuv2
+logger:
+  level: VERBOSE
+ota:
+  password: "***!"
+wifi:
+  ssid: ***
+  password: "***"
+  manual_ip:
+    static_ip: 192.168.1.199
+    gateway: 192.168.1.1
+    subnet: 255.255.255.0
+api:
+  password: '***!'
+switch:
+  - platform: restart
+    name: "Nastia's Kitchen Lights Restart"
+
+sensor:
+  - platform: rotary_encoder
+    name: "Owen"
+    pin_a: D2
+    pin_b: D1
+    min_value: 0
+    id: owen_knob
+    resolution: 4
+    publish_initial_value: true
+    on_clockwise:
+      then:
+      - light.turn_on:
+          id: knob1
+          red: 100%
+          green: 70%
+          blue: 0%
+          color_brightness: !lambda |-
+            return id(owen_knob).raw_state / 100.0;
+          #ESP_LOGI("main", "Owen: %f", id(owen_knob).raw_state);
+    on_anticlockwise:
+      then:
+      - light.turn_on:
+          id: knob1
+          red: 100%
+          green: 70%
+          blue: 0%
+          color_brightness: !lambda |-
+            return id(owen_knob).raw_state / 100.0;
+          #ESP_LOGI("main", "Owen: %f", id(owen_knob).raw_state);
+    on_value_range:
+      above: 100
+      below: 1000
+      then:
+        - light.turn_off:
+            id: knob1
+        - sensor.rotary_encoder.set_value:
+            id: owen_knob
+            value: 0
+  - platform: rotary_encoder
+    name: "Left cooker"
+    pin_a: D7
+    pin_b: D6
+    min_value: 0
+    id: left_knob
+    resolution: 4
+    publish_initial_value: true
+    on_clockwise:
+      then:
+      - light.turn_on:
+          id: left_cooker
+          red: 81%
+          green: 75%
+          blue: 100%
+          color_brightness: !lambda |-
+            return id(left_knob).raw_state / 100.0;
+          #ESP_LOGI("main", "Left cooker: %f", id(left_knob).raw_state);
+          #effect: "Cooker Flicker"
+    on_anticlockwise:
+      then:
+      - light.turn_on:
+          id: left_cooker
+          red: 81%
+          green: 75%
+          blue: 100%
+          color_brightness: !lambda |-
+            return id(left_knob).raw_state / 100.0;
+          #ESP_LOGI("main", "Left cooker: %f", id(left_knob).raw_state);
+          #effect: "Cooker Flicker"
+    on_value_range:
+      above: 100
+      then:
+        - light.turn_off:
+            id: left_cooker
+        - sensor.rotary_encoder.set_value:
+            id: left_knob
+            value: 0
+  - platform: rotary_encoder
+    name: "Right cooker"
+    pin_a: D4
+    pin_b: D3
+    min_value: 0
+    id: right_knob
+    resolution: 4
+    publish_initial_value: true
+    on_clockwise:
+      then:
+      - light.turn_on:
+          id: right_cooker
+          red: 75%
+          green: 75%
+          blue: 100%
+          color_brightness: !lambda |-
+            return id(right_knob).raw_state / 100.0;
+          #ESP_LOGI("main", "Raw Value of my sensor 3: %f", id(right_knob).raw_state);
+          #effect: "Cooker Flicker"
+    on_anticlockwise:
+      then:
+      - light.turn_on:
+          id: right_cooker
+          red: 75%
+          green: 75%
+          blue: 100%
+          color_brightness: !lambda |-
+            return id(right_knob).raw_state / 100.0;
+          #ESP_LOGI("main", "Raw Value of my sensor 3: %f", id(right_knob).raw_state);
+          #effect: "Cooker Flicker"
+    on_value_range:
+      above: 100
+      then:
+        - light.turn_off:
+            id: right_cooker
+        - sensor.rotary_encoder.set_value:
+            id: right_knob
+            value: 0
+light:
+  - platform: neopixelbus
+    type: GRB
+    variant: WS2813
+    pin: GPIO03
+    num_leds: 18
+    name: "Подсветка кухни"
+    id: kitchen_light
+    default_transition_length: 0s
+    restore_mode: ALWAYS_OFF
+
+  - platform: neopixelbus
+    type: GRB
+    variant: WS2813
+    pin: D8
+    num_leds: 18
+    name: "Fridge Light"
+    id: kitchen_fridge_light
+    default_transition_length: 0s
+  - platform: partition
+    name: "Owen"
+    id: knob1
+    default_transition_length: 0s
+    segments:
+      - id: kitchen_light
+        from: 0
+        to: 1
+  - platform: partition
+    name: "left_cooker"
+    id: left_cooker
+    default_transition_length: 0s
+    segments:
+      - id: kitchen_light
+        from: 2
+        to: 9    
+    effects:
+      - addressable_flicker:
+          name: "Cooker Flicker"
+          update_interval: 16ms
+          intensity: 15%
+  - platform: partition
+    name: "right_cooker"
+    id: right_cooker
+    default_transition_length: 0s
+    segments:
+      - id: kitchen_light
+        from: 10
+        to: 17
+    effects:
+      - addressable_flicker:
+          name: "Cooker Flicker"
+          update_interval: 16ms
+          intensity: 15%
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: D5
+      mode:
+        input: true
+        pullup: true
+      #inverted: true
+    name: "Холодилник"
+    id: fridge
+    device_class: door
+    on_press:
+      then:
+        - light.turn_on: kitchen_fridge_light
+    on_release:
+      then:
+        - light.turn_off: kitchen_fridge_light
