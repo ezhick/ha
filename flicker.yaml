@@ -1,0 +1,130 @@
+substitutions:
+  device_name: kitchen-test
+esphome:
+  name: ${device_name}
+esp8266:
+  board: nodemcuv2
+logger:
+  level: VERBOSE
+ota:
+  password: "***!"
+wifi:
+  ssid: ***
+  password: "***"
+  manual_ip:
+    static_ip: 192.168.1.198
+    gateway: 192.168.1.1
+    subnet: 255.255.255.0
+api:
+  password: '***!'
+web_server:
+  port: 80
+
+light:
+  - platform: neopixelbus
+    type: GRB
+    variant: WS2813
+    pin: GPIO03
+    num_leds: 22
+    name: "Kitchen light"
+    id: kitchen_light
+    default_transition_length: 0s
+    #internal: true
+    effects:
+      - addressable_flicker:
+          name: "Cooker Flicker"
+switch:
+  - platform: gpio
+    pin: D5
+    name: "Turn on light"
+    id: light3
+    on_turn_on:   
+      - light.turn_on:
+          id: kitchen_light
+          red: 0%
+          green: 0%
+          blue: 0%
+          color_brightness: 0%
+
+      - switch.turn_off: light3
+  - platform: gpio
+    pin: D7
+    name: "Turn on flicker"
+    id: light5
+    on_turn_on:   
+      - light.turn_on:
+          id: kitchen_light
+          effect: "Cooker Flicker"
+      - switch.turn_off: light5
+  - platform: gpio
+    pin: D6
+    name: "Turn off flicker"
+    id: light4
+    on_turn_on:   
+      - light.turn_on:
+          id: kitchen_light
+          effect: none
+      - switch.turn_off: light3
+
+  - platform: gpio
+    pin: D1
+    name: "100% brightness"
+    id: light1
+    on_turn_on:
+
+      - light.addressable_set:
+          id: kitchen_light
+          range_from: 0
+          range_to: 2
+          red: 100%
+          green: 0%
+          blue: 0%
+          color_brightness: 100%
+      - light.addressable_set:
+          id: kitchen_light
+          range_from: 3
+          range_to: 5
+          red: 0%
+          green: 100%
+          blue: 0%
+          color_brightness: 100%
+      - light.addressable_set:
+          id: kitchen_light
+          range_from: 6
+          range_to: 8
+          red: 0%
+          green: 0%
+          blue: 100%
+          color_brightness: 100%
+      - switch.turn_off: light1
+  - platform: gpio
+    pin: D2
+    name: "50% brightness"
+    id: light2
+    on_turn_on:
+      - light.addressable_set:
+          id: kitchen_light
+          range_from: 0
+          range_to: 2
+          red: 100%
+          green: 0%
+          blue: 0%
+          color_brightness: 50%
+      - light.addressable_set:
+          id: kitchen_light
+          range_from: 3
+          range_to: 5
+          red: 0%
+          green: 100%
+          blue: 0%
+          color_brightness: 50%
+      - light.addressable_set:
+          id: kitchen_light
+          range_from: 6
+          range_to: 8
+          red: 0%
+          green: 0%
+          blue: 100%
+          color_brightness: 50%
+      - switch.turn_off: light2
+
